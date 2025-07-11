@@ -178,34 +178,45 @@ class ResourceController extends Controller
     public function dashboard(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Resource::query();
 
-        // If not admin, only show user's resources
-        if (!$user->hasRole('Administrator')) {
-            $query->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhere('assigned_to', $user->id);
-            });
-        }
+        // Base query for user filtering
+        $baseQuery = function ($query) use ($user) {
+            if (!$user->hasRole('Administrator')) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhere('assigned_to', $user->id);
+                });
+            }
+        };
 
         $stats = [
-            'total_resources' => $query->count(),
-            'by_status' => $query->selectRaw('status, count(*) as count')
+            'total_resources' => Resource::query()->tap($baseQuery)->count(),
+            'by_status' => Resource::query()
+                ->tap($baseQuery)
+                ->selectRaw('status, count(*) as count')
                 ->groupBy('status')
                 ->pluck('count', 'status')
                 ->toArray(),
-            'by_priority' => $query->selectRaw('priority, count(*) as count')
+            'by_priority' => Resource::query()
+                ->tap($baseQuery)
+                ->selectRaw('priority, count(*) as count')
                 ->groupBy('priority')
                 ->pluck('count', 'priority')
                 ->toArray(),
-            'by_type' => $query->selectRaw('type, count(*) as count')
+            'by_type' => Resource::query()
+                ->tap($baseQuery)
+                ->selectRaw('type, count(*) as count')
                 ->groupBy('type')
                 ->pluck('count', 'type')
                 ->toArray(),
-            'overdue' => $query->where('due_date', '<', now())
+            'overdue' => Resource::query()
+                ->tap($baseQuery)
+                ->where('due_date', '<', now())
                 ->where('status', '!=', 'completed')
                 ->count(),
-            'recent_activity' => $query->orderBy('updated_at', 'desc')
+            'recent_activity' => Resource::query()
+                ->tap($baseQuery)
+                ->orderBy('updated_at', 'desc')
                 ->limit(5)
                 ->with(['user', 'assignedUser'])
                 ->get(),

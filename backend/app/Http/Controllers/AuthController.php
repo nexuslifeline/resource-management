@@ -70,6 +70,9 @@ class AuthController extends Controller
                 $user->roles()->attach($role->id);
             }
 
+            // Load the user's roles
+            $user->load('roles');
+
             // Commit the database transaction
             DB::commit();
 
@@ -127,6 +130,9 @@ class AuthController extends Controller
                     'message' => $invalidMessage
                 ], 401);
             }
+
+            // Load the user's roles
+            $user->load('roles');
 
             // Create a token for the authenticated user
             $token = $user->createToken(self::AUTH_TOKEN_NAME)->plainTextToken;
