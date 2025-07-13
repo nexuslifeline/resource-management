@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ResourceController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\VerificationController;
@@ -56,8 +57,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::put('/{resource:uuid}', [ResourceController::class, 'update'])->middleware('resource.ownership');
         Route::delete('/{resource:uuid}', [ResourceController::class, 'destroy'])->middleware('resource.ownership');
         Route::get('/dashboard/stats', [ResourceController::class, 'dashboard']);
-        Route::get('/users/list', [ResourceController::class, 'getUsers']);
     });
+
+    // User Management Routes (Admin only)
+    Route::prefix('users')->middleware('role:Administrator')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::get('/{user:uuid}', [UserController::class, 'show']);
+    });
+
+    // Get users for assignment (available to all authenticated users)
+    Route::get('/users/assignment', [UserController::class, 'getUsersForAssignment']);
 
     // Admin-only routes
     Route::group(['middleware' => ['role:Administrator']], function () {

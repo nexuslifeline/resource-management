@@ -3,198 +3,141 @@
 namespace App\Http\Controllers;
 
 use App\Models\Resource;
-use App\Models\User;
 use App\Http\Resources\ResourceResource;
 use App\Http\Requests\StoreResourceRequest;
 use App\Http\Requests\UpdateResourceRequest;
+use App\Repositories\ResourceRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class ResourceController extends Controller
 {
+    public function __construct(
+        private ResourceRepositoryInterface $resourceRepository
+    ) {}
+
     /**
      * Display a listing of resources with pagination and filtering
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
-        $query = Resource::with(['user', 'assignedUser']);
+        try {
+            // Extract filters from request
+            $filters = [
+                'search' => $request->input('search'),
+                'status' => $request->input('status'),
+                'type' => $request->input('type'),
+                'priority' => $request->input('priority'),
+                'assigned_to' => $request->input('assigned_to'),
+                'sort_by' => $request->input('sort_by', 'created_at'),
+                'sort_order' => $request->input('sort_order', 'desc'),
+            ];
 
-        // Apply filters
-        if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('tags', 'like', "%{$search}%");
-            });
+            // Retrieve the per_page parameter from the request
+            $perPage = $request->input('per_page', 15);
+
+            // Retrieve the resources from the repository
+            $resources = $this->resourceRepository->getPaginated($filters, $perPage);
+
+            // Return a collection of resource resources
+            return ResourceResource::collection($resources);
+        } catch (\Exception $e) {
+            // Something went wrong
+            Log::error("Error during resource list fetch. " . $e->getMessage());
+            return response()->json(['message' => 'Failed to fetch resources'], 500);
         }
-
-        if ($request->filled('status')) {
-            $status = $request->get('status');
-            if (is_string($status)) {
-                $status = explode(',', $status);
-            }
-            $query->byStatus($status);
-        }
-
-        if ($request->filled('type')) {
-            $query->byType($request->get('type'));
-        }
-
-        if ($request->filled('priority')) {
-            $priority = $request->get('priority');
-            if (is_string($priority)) {
-                $priority = explode(',', $priority);
-            }
-            $query->byPriority($priority);
-        }
-
-        if ($request->filled('assigned_to')) {
-            $query->byAssignedUser($request->get('assigned_to'));
-        }
-
-        // Apply sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        // Paginate results
-        $perPage = $request->get('per_page', 15);
-        $resources = $query->paginate($perPage);
-
-        return response()->json([
-            'data' => ResourceResource::collection($resources->items()),
-            'pagination' => [
-                'current_page' => $resources->currentPage(),
-                'last_page' => $resources->lastPage(),
-                'per_page' => $resources->perPage(),
-                'total' => $resources->total(),
-                'next_page' => $resources->hasMorePages() ? $resources->currentPage() + 1 : null,
-                'prev_page' => $resources->currentPage() > 1 ? $resources->currentPage() - 1 : null,
-            ]
-        ]);
     }
 
     /**
      * Store a newly created resource
      */
-    public function store(StoreResourceRequest $request): JsonResponse
+    public function store(StoreResourceRequest $request)
     {
-        $resource = Resource::create([
-            ...$request->validated(),
-            'user_id' => $request->user()->id,
-        ]);
+        try {
+            $resource = $this->resourceRepository->create([
+                ...$request->validated(),
+                'user_id' => $request->user()->id,
+            ]);
 
-        $resource->load(['user', 'assignedUser']);
+            $resource->load(['user', 'assignedUser']);
 
-        return response()->json([
-            'message' => 'Resource created successfully',
-            'data' => new ResourceResource($resource)
-        ], 201);
+            return (new ResourceResource($resource))->response()->setStatusCode(201);
+        } catch (\Exception $e) {
+            Log::error("Error during resource creation. " . $e->getMessage());
+            return response()->json(['message' => 'Failed to create resource'], 500);
+        }
     }
 
     /**
      * Display the specified resource
      */
-    public function show(Resource $resource): JsonResponse
+    public function show(Resource $resource)
     {
-        $resource->load(['user', 'assignedUser']);
-        
-        return response()->json([
-            'data' => new ResourceResource($resource)
-        ]);
+        try {
+            $resource->load(['user', 'assignedUser']);
+            
+            return new ResourceResource($resource);
+        } catch (\Exception $e) {
+            Log::error("Error during resource fetch. " . $e->getMessage());
+            return response()->json(['message' => 'Failed to fetch resource'], 500);
+        }
     }
 
     /**
      * Update the specified resource
      */
-    public function update(UpdateResourceRequest $request, Resource $resource): JsonResponse
+    public function update(UpdateResourceRequest $request, Resource $resource)
     {
-        $resource->update($request->validated());
-        $resource->load(['user', 'assignedUser']);
+        try {
+            $resource = $this->resourceRepository->update($resource, $request->validated());
+            $resource->load(['user', 'assignedUser']);
 
-        return response()->json([
-            'message' => 'Resource updated successfully',
-            'data' => new ResourceResource($resource)
-        ]);
+            return new ResourceResource($resource);
+        } catch (\Exception $e) {
+            Log::error("Error during resource update. " . $e->getMessage());
+            return response()->json(['message' => 'Failed to update resource'], 500);
+        }
     }
 
     /**
      * Remove the specified resource
      */
-    public function destroy(Request $request, Resource $resource): JsonResponse
+    public function destroy(Request $request, Resource $resource)
     {
-        $resource->delete();
+        try {
+            $this->resourceRepository->delete($resource);
 
-        return response()->json([
-            'message' => 'Resource deleted successfully'
-        ]);
+            return response()->json([
+                'message' => 'Resource deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error during resource deletion. " . $e->getMessage());
+            return response()->json(['message' => 'Failed to delete resource'], 500);
+        }
     }
 
     /**
      * Get dashboard statistics
      */
-    public function dashboard(Request $request): JsonResponse
+    public function dashboard(Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        // Base query for user filtering
-        $baseQuery = function ($query) use ($user) {
-            if (!$user->hasRole('Administrator')) {
-                $query->where(function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                      ->orWhere('assigned_to', $user->id);
-                });
+            // Get dashboard stats based on user role
+            if ($user->hasRole('Administrator')) {
+                $stats = $this->resourceRepository->getAdminStats();
+            } else {
+                $stats = $this->resourceRepository->getUserStats($user->id);
             }
-        };
 
-        $stats = [
-            'total_resources' => Resource::query()->tap($baseQuery)->count(),
-            'by_status' => Resource::query()
-                ->tap($baseQuery)
-                ->selectRaw('status, count(*) as count')
-                ->groupBy('status')
-                ->pluck('count', 'status')
-                ->toArray(),
-            'by_priority' => Resource::query()
-                ->tap($baseQuery)
-                ->selectRaw('priority, count(*) as count')
-                ->groupBy('priority')
-                ->pluck('count', 'priority')
-                ->toArray(),
-            'by_type' => Resource::query()
-                ->tap($baseQuery)
-                ->selectRaw('type, count(*) as count')
-                ->groupBy('type')
-                ->pluck('count', 'type')
-                ->toArray(),
-            'overdue' => Resource::query()
-                ->tap($baseQuery)
-                ->where('due_date', '<', now())
-                ->where('status', '!=', 'completed')
-                ->count(),
-            'recent_activity' => Resource::query()
-                ->tap($baseQuery)
-                ->orderBy('updated_at', 'desc')
-                ->limit(5)
-                ->with(['user', 'assignedUser'])
-                ->get(),
-        ];
-
-        return response()->json([
-            'data' => $stats
-        ]);
-    }
-
-    /**
-     * Get users for assignment dropdown
-     */
-    public function getUsers(): JsonResponse
-    {
-        $users = User::select('id', 'name', 'email')->get();
-        
-        return response()->json([
-            'data' => $users
-        ]);
+            return response()->json([
+                'data' => $stats
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error during dashboard stats fetch. " . $e->getMessage());
+            return response()->json(['message' => 'Failed to fetch dashboard statistics'], 500);
+        }
     }
 } 

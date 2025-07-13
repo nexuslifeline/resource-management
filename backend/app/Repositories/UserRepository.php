@@ -3,89 +3,119 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 
 class UserRepository implements UserRepositoryInterface
 {
     /**
      * Creates a new User record in the database.
-     *
-     * @param array $data The data for creating the User record.
-     * @throws Some_Exception_Class A description of the exception that can be thrown.
-     * @return User The newly created User record.
      */
-    public function create(array $data)
+    public function create(array $data): User
     {
         return User::create($data);
     }
 
     /**
-     * Updates an User with the given data.
-     *
-     * @param User $user The User to update.
-     * @param array $data The data to update the User with.
-     * @return User The updated User.
+     * Updates a User with the given data.
      */
-    public function update(User $user, array $data)
+    public function update(User $user, array $data): User
     {
         $user->update($data);
-        return $user;
+        return $user->fresh();
     }
 
     /**
-     * Deletes an user.
-     *
-     * @param User $user The user to delete.
-     * @throws Some_Exception_Class When an error occurs while deleting the user.
+     * Deletes a user.
      */
-    public function delete(User $user)
+    public function delete(User $user): bool
     {
-        $user->delete();
+        return $user->delete();
     }
 
     /**
-     * Finds an user by ID.
-     *
-     * @param int $id The ID of the admin to find.
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException If the user is not found.
-     * @return \App\Models\User The found user.
+     * Finds a user by ID.
      */
-    public function find($id)
+    public function findById(int $id): User
     {
         return User::findOrFail($id);
     }
 
     /**
      * Find a user by their email address.
-     *
-     * @param string $email The email address of the user.
-     * @throws \Exception If an error occurs during the operation.
-     * @return User|null The user object if found, or null if not found.
      */
-    public function findByEmail($email)
+    public function findByEmail(string $email): ?User
     {
         return User::where('email', $email)->first();
     }
 
     /**
      * Find a user by verification token.
-     *
-     * @param  string  $token  The verification token to search for.
-     * @return User|null       The user found, or null if not found.
      */
-    public function findByVerificationToken(string $token)
+    public function findByVerificationToken(string $token): ?User
     {
-        // Use the User model to query the database and find the first record
-        // where the verification_token column matches the given token.
-        // Return the user found, or null if no user is found.
         return User::where('verification_token', $token)->first();
     }
 
     /**
-     * Retrieves all records from the database.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * Find a user by UUID.
      */
-    public function all()
+    public function findByUuid(string $uuid): User
+    {
+        return User::where('uuid', $uuid)->firstOrFail();
+    }
+
+    /**
+     * Get paginated users with optional filters
+     * 
+     * @param array $filters Array containing search, role, sort_by, sort_order
+     * @param int|null $perPage Number of items per page (default: 15)
+     * @return LengthAwarePaginator
+     */
+    public function getPaginated(array $filters, ?int $perPage = 15): LengthAwarePaginator
+    {
+        $query = User::with('roles');
+
+        // Apply search filter
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply role filter
+        if (!empty($filters['role'])) {
+            $role = $filters['role'];
+            $query->whereHas('roles', function ($q) use ($role) {
+                $q->where('name', $role);
+            });
+        }
+
+        // Apply sorting
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortOrder = $filters['sort_order'] ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        return $query->paginate($perPage);
+    }
+
+    /**
+     * Get users for assignment dropdown
+     * 
+     * @return Collection Users with id, name, and email for assignment
+     */
+    public function getForAssignment(): Collection
+    {
+        return User::select('id', 'name', 'email')->get();
+    }
+
+    /**
+     * Retrieves all records from the database.
+     */
+    public function all(): Collection
     {
         return User::all();
     }

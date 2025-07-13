@@ -3,20 +3,58 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 interface UserRepositoryInterface
 {
-    public function create(array $data);
+    /**
+     * Create a new user
+     */
+    public function create(array $data): User;
 
-    public function update(User $user, array $data);
+    /**
+     * Update an existing user
+     */
+    public function update(User $user, array $data): User;
 
-    public function delete(User $user);
+    /**
+     * Delete a user
+     */
+    public function delete(User $user): bool;
 
-    public function find($id);
+    /**
+     * Find a user by ID
+     */
+    public function findById(int $id): User;
 
-    public function findByEmail(string $email);
+    /**
+     * Find a user by email address
+     */
+    public function findByEmail(string $email): ?User;
 
-    public function findByVerificationToken(string $token);
+    /**
+     * Find a user by verification token
+     */
+    public function findByVerificationToken(string $token): ?User;
 
-    public function all();
+    /**
+     * Find a user by UUID
+     */
+    public function findByUuid(string $uuid): User;
+
+    /**
+     * Get paginated users with optional filters
+     */
+    public function getPaginated(array $filters, ?int $perPage = 15): LengthAwarePaginator;
+
+    /**
+     * Get users for assignment dropdown
+     */
+    public function getForAssignment(): Collection;
+
+    /**
+     * Get all users
+     */
+    public function all(): Collection;
 }
