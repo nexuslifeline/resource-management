@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Resource;
 use App\Models\User;
+use App\Http\Resources\ResourceResource;
+use App\Http\Requests\StoreResourceRequest;
+use App\Http\Requests\UpdateResourceRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class ResourceController extends Controller
 {
@@ -29,7 +30,11 @@ class ResourceController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->byStatus($request->get('status'));
+            $status = $request->get('status');
+            if (is_string($status)) {
+                $status = explode(',', $status);
+            }
+            $query->byStatus($status);
         }
 
         if ($request->filled('type')) {
@@ -37,7 +42,11 @@ class ResourceController extends Controller
         }
 
         if ($request->filled('priority')) {
-            $query->byPriority($request->get('priority'));
+            $priority = $request->get('priority');
+            if (is_string($priority)) {
+                $priority = explode(',', $priority);
+            }
+            $query->byPriority($priority);
         }
 
         if ($request->filled('assigned_to')) {
@@ -54,12 +63,14 @@ class ResourceController extends Controller
         $resources = $query->paginate($perPage);
 
         return response()->json([
-            'data' => $resources->items(),
+            'data' => ResourceResource::collection($resources->items()),
             'pagination' => [
                 'current_page' => $resources->currentPage(),
                 'last_page' => $resources->lastPage(),
                 'per_page' => $resources->perPage(),
                 'total' => $resources->total(),
+                'next_page' => $resources->hasMorePages() ? $resources->currentPage() + 1 : null,
+                'prev_page' => $resources->currentPage() > 1 ? $resources->currentPage() - 1 : null,
             ]
         ]);
     }
@@ -67,27 +78,8 @@ class ResourceController extends Controller
     /**
      * Store a newly created resource
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreResourceRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => ['required', Rule::in(['project', 'task', 'inventory', 'document', 'other'])],
-            'status' => ['required', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
-            'priority' => ['required', Rule::in(['low', 'medium', 'high', 'urgent'])],
-            'assigned_to' => 'nullable|exists:users,id',
-            'due_date' => 'nullable|date|after:now',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string|max:50',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $resource = Resource::create([
             ...$request->validated(),
             'user_id' => $request->user()->id,
@@ -97,7 +89,7 @@ class ResourceController extends Controller
 
         return response()->json([
             'message' => 'Resource created successfully',
-            'data' => $resource
+            'data' => new ResourceResource($resource)
         ], 201);
     }
 
@@ -109,47 +101,21 @@ class ResourceController extends Controller
         $resource->load(['user', 'assignedUser']);
         
         return response()->json([
-            'data' => $resource
+            'data' => new ResourceResource($resource)
         ]);
     }
 
     /**
      * Update the specified resource
      */
-    public function update(Request $request, Resource $resource): JsonResponse
+    public function update(UpdateResourceRequest $request, Resource $resource): JsonResponse
     {
-        // Check if user can update this resource
-        if (!$request->user()->hasRole('Administrator') && $resource->user_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Unauthorized to update this resource'
-            ], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => ['sometimes', 'required', Rule::in(['project', 'task', 'inventory', 'document', 'other'])],
-            'status' => ['sometimes', 'required', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
-            'priority' => ['sometimes', 'required', Rule::in(['low', 'medium', 'high', 'urgent'])],
-            'assigned_to' => 'nullable|exists:users,id',
-            'due_date' => 'nullable|date',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string|max:50',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $resource->update($request->validated());
         $resource->load(['user', 'assignedUser']);
 
         return response()->json([
             'message' => 'Resource updated successfully',
-            'data' => $resource
+            'data' => new ResourceResource($resource)
         ]);
     }
 
@@ -158,13 +124,6 @@ class ResourceController extends Controller
      */
     public function destroy(Request $request, Resource $resource): JsonResponse
     {
-        // Check if user can delete this resource
-        if (!$request->user()->hasRole('Administrator') && $resource->user_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Unauthorized to delete this resource'
-            ], 403);
-        }
-
         $resource->delete();
 
         return response()->json([

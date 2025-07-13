@@ -53,8 +53,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('/', [ResourceController::class, 'index']);
         Route::post('/', [ResourceController::class, 'store']);
         Route::get('/{resource:uuid}', [ResourceController::class, 'show']);
-        Route::put('/{resource:uuid}', [ResourceController::class, 'update']);
-        Route::delete('/{resource:uuid}', [ResourceController::class, 'destroy']);
+        Route::put('/{resource:uuid}', [ResourceController::class, 'update'])->middleware('resource.ownership');
+        Route::delete('/{resource:uuid}', [ResourceController::class, 'destroy'])->middleware('resource.ownership');
         Route::get('/dashboard/stats', [ResourceController::class, 'dashboard']);
         Route::get('/users/list', [ResourceController::class, 'getUsers']);
     });

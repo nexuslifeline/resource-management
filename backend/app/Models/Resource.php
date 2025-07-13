@@ -51,6 +51,9 @@ class Resource extends BaseModel
      */
     public function scopeByStatus($query, $status)
     {
+        if (is_array($status)) {
+            return $query->whereIn('status', $status);
+        }
         return $query->where('status', $status);
     }
 
@@ -67,6 +70,9 @@ class Resource extends BaseModel
      */
     public function scopeByPriority($query, $priority)
     {
+        if (is_array($priority)) {
+            return $query->whereIn('priority', $priority);
+        }
         return $query->where('priority', $priority);
     }
 
