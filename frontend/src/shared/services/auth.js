@@ -21,10 +21,16 @@ export const authAPI = {
    * @param {string} name - User's full name
    * @param {string} email - User's email address
    * @param {string} password - User's password
+   * @param {string} confirmPassword - User's password confirmation
    * @returns {Promise<Object>} Response with user data and token
    */
-  async register(name, email, password) {
-    const response = await api.post("/register", { name, email, password });
+  async register(name, email, password, confirmPassword) {
+    const response = await api.post("/register", {
+      name,
+      email,
+      password,
+      passwordConfirmation: confirmPassword
+    });
     return response.data;
   },
 

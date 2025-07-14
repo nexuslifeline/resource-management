@@ -56,11 +56,11 @@ export const useAuthStore = create(
         }
       },
 
-      register: async (name, email, password) => {
+      register: async (name, email, password, confirmPassword) => {
         try {
           set({ isLoading: true, error: null });
 
-          const response = await authAPI.register(name, email, password);
+          const response = await authAPI.register(name, email, password, confirmPassword);
           const { user, token } = response;
 
           // Store token in localStorage

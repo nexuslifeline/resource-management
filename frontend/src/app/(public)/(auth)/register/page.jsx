@@ -40,7 +40,8 @@ export default function RegisterPage() {
   const {
     register: formRegister,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
+    setError
   } = useForm({
     resolver: zodResolver(registerSchema)
   });
@@ -48,12 +49,16 @@ export default function RegisterPage() {
   const onSubmit = async data => {
     try {
       setIsLoading(true);
-      await register(data.name, data.email, data.password);
+      await register(data.name, data.email, data.password, data.confirmPassword);
       router.push("/dashboard");
     } catch (error) {
-      // Error is already handled by the store
-      console.error("Registration error:", error);
-    } finally {
+      // Handle field errors from API
+      const apiErrors = error.response?.data?.errors;
+      if (apiErrors) {
+        Object.entries(apiErrors).forEach(([field, messages]) => {
+          setError(field, { type: "server", message: messages[0] });
+        });
+      }
       setIsLoading(false);
     }
   };
