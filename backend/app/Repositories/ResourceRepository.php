@@ -115,40 +115,75 @@ class ResourceRepository implements ResourceRepositoryInterface
      */
     public function getUserStats(int $userId): array
     {
-        $baseQuery = function ($query) use ($userId) {
-            $query->where(function ($q) use ($userId) {
+        try {
+            // Base query for user's resources
+            $userResourcesQuery = function ($query) use ($userId) {
+                $query->where(function ($q) use ($userId) {
+                    $q->where('user_id', $userId)
+                      ->orWhere('assigned_to', $userId);
+                });
+            };
+
+            // Get total resources
+            $totalResources = Resource::where(function ($q) use ($userId) {
                 $q->where('user_id', $userId)
                   ->orWhere('assigned_to', $userId);
-            });
-        };
+            })->count();
 
-        return [
-            'total_resources' => Resource::query()->tap($baseQuery)->count(),
-            'by_status' => Resource::query()
-                ->tap($baseQuery)
-                ->selectRaw('status, count(*) as count')
-                ->groupBy('status')
-                ->pluck('count', 'status')
-                ->toArray(),
-            'by_priority' => Resource::query()
-                ->tap($baseQuery)
-                ->selectRaw('priority, count(*) as count')
-                ->groupBy('priority')
-                ->pluck('count', 'priority')
-                ->toArray(),
-            'by_type' => Resource::query()
-                ->tap($baseQuery)
-                ->selectRaw('type, count(*) as count')
-                ->groupBy('type')
-                ->pluck('count', 'type')
-                ->toArray(),
-            'overdue' => Resource::query()
-                ->tap($baseQuery)
-                ->where('due_date', '<', now())
-                ->where('status', '!=', 'completed')
-                ->count(),
-            'recent_activity' => $this->getUserActivity($userId, 5),
-        ];
+            // Get status distribution
+            $byStatus = Resource::where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('assigned_to', $userId);
+            })
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+            // Get priority distribution
+            $byPriority = Resource::where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('assigned_to', $userId);
+            })
+            ->selectRaw('priority, count(*) as count')
+            ->groupBy('priority')
+            ->pluck('count', 'priority')
+            ->toArray();
+
+            // Get type distribution
+            $byType = Resource::where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('assigned_to', $userId);
+            })
+            ->selectRaw('type, count(*) as count')
+            ->groupBy('type')
+            ->pluck('count', 'type')
+            ->toArray();
+
+            // Get overdue resources
+            $overdue = Resource::where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhere('assigned_to', $userId);
+            })
+            ->where('due_date', '<', now())
+            ->where('status', '!=', 'completed')
+            ->count();
+
+            // Get recent activity
+            $recentActivity = $this->getUserActivity($userId, 5);
+
+            return [
+                'total_resources' => $totalResources,
+                'by_status' => $byStatus,
+                'by_priority' => $byPriority,
+                'by_type' => $byType,
+                'overdue' => $overdue,
+                'recent_activity' => $recentActivity,
+            ];
+        } catch (\Exception $e) {
+            \Log::error("ResourceRepository getUserStats error: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -158,25 +193,42 @@ class ResourceRepository implements ResourceRepositoryInterface
      */
     public function getAdminStats(): array
     {
-        return [
-            'total_resources' => Resource::count(),
-            'by_status' => Resource::selectRaw('status, count(*) as count')
+        try {
+            $totalResources = Resource::count();
+            
+            $byStatus = Resource::selectRaw('status, count(*) as count')
                 ->groupBy('status')
                 ->pluck('count', 'status')
-                ->toArray(),
-            'by_priority' => Resource::selectRaw('priority, count(*) as count')
+                ->toArray();
+                
+            $byPriority = Resource::selectRaw('priority, count(*) as count')
                 ->groupBy('priority')
                 ->pluck('count', 'priority')
-                ->toArray(),
-            'by_type' => Resource::selectRaw('type, count(*) as count')
+                ->toArray();
+                
+            $byType = Resource::selectRaw('type, count(*) as count')
                 ->groupBy('type')
                 ->pluck('count', 'type')
-                ->toArray(),
-            'overdue' => Resource::where('due_date', '<', now())
+                ->toArray();
+                
+            $overdue = Resource::where('due_date', '<', now())
                 ->where('status', '!=', 'completed')
-                ->count(),
-            'recent_activity' => $this->getAdminActivity(5),
-        ];
+                ->count();
+                
+            $recentActivity = $this->getAdminActivity(5);
+
+            return [
+                'total_resources' => $totalResources,
+                'by_status' => $byStatus,
+                'by_priority' => $byPriority,
+                'by_type' => $byType,
+                'overdue' => $overdue,
+                'recent_activity' => $recentActivity,
+            ];
+        } catch (\Exception $e) {
+            \Log::error("ResourceRepository getAdminStats error: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**

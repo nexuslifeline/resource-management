@@ -119,4 +119,60 @@ class UserRepository implements UserRepositoryInterface
     {
         return User::all();
     }
+
+    /**
+     * Get user statistics for dashboard
+     * 
+     * @return array Statistics including total_users, by_role, by_status, recent_registrations
+     */
+    public function getStats(): array
+    {
+        try {
+            $totalUsers = User::count();
+            
+            // Get role distribution - simplified to avoid complex joins
+            $roleDistribution = [];
+            $usersWithRoles = User::with('roles')->get();
+            foreach ($usersWithRoles as $user) {
+                foreach ($user->roles as $role) {
+                    $roleName = $role->name;
+                    $roleDistribution[$roleName] = ($roleDistribution[$roleName] ?? 0) + 1;
+                }
+            }
+            
+            // Get status distribution
+            $activeUsers = User::whereNotNull('email_verified_at')->count();
+            $invitedUsers = User::whereNull('email_verified_at')->count();
+            
+            // Get recent registrations
+            $recentRegistrations = $this->getRecentRegistrations(5);
+            
+            return [
+                'total_users' => $totalUsers,
+                'by_role' => $roleDistribution,
+                'by_status' => [
+                    'active' => $activeUsers,
+                    'invited' => $invitedUsers,
+                ],
+                'recent_registrations' => $recentRegistrations,
+            ];
+        } catch (\Exception $e) {
+            \Log::error("UserRepository getStats error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Get recent user registrations
+     * 
+     * @param int $limit Number of recent registrations to return (default: 5)
+     * @return Collection Recent user registrations
+     */
+    public function getRecentRegistrations(int $limit = 5): Collection
+    {
+        return User::orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->with('roles')
+            ->get();
+    }
 }

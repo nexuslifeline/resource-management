@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,10 @@ Route::prefix('v1')->group(function () {
         
         // Logout the currently authenticated user
         Route::post('/logout', [AuthController::class, 'logout']);
+
+        // Dashboard Routes
+        Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::get('/dashboard/test', [DashboardController::class, 'test']);
 
         // Resource Management Routes
         Route::prefix('resources')->group(function () {
