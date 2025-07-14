@@ -9,10 +9,9 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-    Accept: "application/json",
-    "X-Requested-With": "XMLHttpRequest"
-  },
-  withCredentials: true // Important for Laravel Sanctum
+    Accept: "application/json"
+  }
+  // Removed withCredentials for bearer token authentication
 });
 
 // Add request interceptor to include token and convert to snake_case
@@ -42,7 +41,7 @@ api.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      // window.location.href = "/login";
     }
     return Promise.reject(error);
   }

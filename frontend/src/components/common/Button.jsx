@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
 
 import { cn } from "@/shared/lib";
 
@@ -33,15 +34,55 @@ const buttonVariants = cva(
   }
 );
 
+/**
+ * Enhanced Button component with loading state
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.className - Additional CSS classes
+ * @param {string} props.variant - Button variant (default, destructive, outline, secondary, ghost, link)
+ * @param {string} props.size - Button size (default, sm, lg, icon)
+ * @param {boolean} props.asChild - Whether to render as child component
+ * @param {boolean} props.isBusy - Whether button is in loading state
+ * @param {string} props.busyText - Text to show when button is busy (optional)
+ * @param {React.ReactNode} props.children - Button content
+ * @param {React.Ref} ref - Forwarded ref
+ */
 const Button = React.forwardRef(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      isBusy = false,
+      busyText,
+      children,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const Comp = asChild ? Slot : "button";
+
+    // Show loading spinner and busy text when isBusy is true
+    const buttonContent = isBusy ? (
+      <>
+        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        {busyText || children}
+      </>
+    ) : (
+      children
+    );
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        disabled={disabled || isBusy}
         {...props}
-      />
+      >
+        {buttonContent}
+      </Comp>
     );
   }
 );

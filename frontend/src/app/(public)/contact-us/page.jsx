@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/Card";
+import { Input } from "@/components/forms";
+import { Button } from "@/components/common/Button";
 
 export default function ContactUsPage() {
   const [form, setForm] = useState({
@@ -64,10 +64,8 @@ export default function ContactUsPage() {
                   value={form.name}
                   onChange={handleChange}
                   autoComplete="name"
+                  error={errors.name}
                 />
-                {errors.name && (
-                  <div className="mt-1 text-xs text-red-500">{errors.name}</div>
-                )}
               </div>
               <div>
                 <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -79,12 +77,8 @@ export default function ContactUsPage() {
                   onChange={handleChange}
                   autoComplete="email"
                   type="email"
+                  error={errors.email}
                 />
-                {errors.email && (
-                  <div className="mt-1 text-xs text-red-500">
-                    {errors.email}
-                  </div>
-                )}
               </div>
               <div>
                 <label className="block mb-1 text-sm font-medium text-gray-700">

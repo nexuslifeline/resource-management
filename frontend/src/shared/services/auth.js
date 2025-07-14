@@ -1,4 +1,4 @@
-import { api } from '../lib'
+import { api } from "../lib";
 
 /**
  * Centralized authentication service that handles all auth-related API calls
@@ -12,8 +12,8 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with user data and token
    */
   async login(email, password) {
-    const response = await api.post('/login', { email, password })
-    return response.data
+    const response = await api.post("/login", { email, password });
+    return response.data;
   },
 
   /**
@@ -24,8 +24,8 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with user data and token
    */
   async register(name, email, password) {
-    const response = await api.post('/register', { name, email, password })
-    return response.data
+    const response = await api.post("/register", { name, email, password });
+    return response.data;
   },
 
   /**
@@ -33,8 +33,8 @@ export const authAPI = {
    * @returns {Promise<Object>} Response from logout endpoint
    */
   async logout() {
-    const response = await api.post('/logout')
-    return response.data
+    const response = await api.post("/logout");
+    return response.data;
   },
 
   /**
@@ -42,8 +42,8 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with user data
    */
   async getMe() {
-    const response = await api.get('/me')
-    return response.data
+    const response = await api.get("/me");
+    return response.data;
   },
 
   /**
@@ -51,7 +51,7 @@ export const authAPI = {
    * @returns {boolean} True if token exists in localStorage
    */
   isAuthenticated() {
-    return !!localStorage.getItem('token')
+    return !!localStorage.getItem("token");
   },
 
   /**
@@ -59,7 +59,7 @@ export const authAPI = {
    * @returns {string|null} The stored token or null
    */
   getToken() {
-    return localStorage.getItem('token')
+    return localStorage.getItem("token");
   },
 
   /**
@@ -67,13 +67,13 @@ export const authAPI = {
    * @param {string} token - The authentication token
    */
   setToken(token) {
-    localStorage.setItem('token', token)
+    localStorage.setItem("token", token);
   },
 
   /**
    * Remove token from localStorage
    */
   removeToken() {
-    localStorage.removeItem('token')
+    localStorage.removeItem("token");
   }
-} 
+};
