@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: resource-backend
+    container_name: resource-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: resource
+      DB_USERNAME: root
+      DB_PASSWORD: 123456
+    networks:
+      - resource-network
+    command: sh -c "sleep infinity"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: resource-frontend
+    container_name: resource-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+    networks:
+      - resource-network
+
+  db:
+    image: mysql:8.0
+    container_name: resource-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: resource
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - resource-network
+
+networks:
+  resource-network:
+    driver: bridge
+
+volumes:
+  db_data:
