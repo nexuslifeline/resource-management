@@ -124,8 +124,59 @@ API and state logic are fully abstracted to reduce coupling and simplify updates
 - Node.js 18 or higher
 - Composer
 - MySQL/PostgreSQL database
+- Docker & Docker Compose (for Docker setup)
 
-### Backend Setup
+### Setup Options
+
+This project supports two setup approaches:
+
+#### 🐳 **Option 1: Docker Setup (Recommended)**
+
+The easiest way to get started with all services running in containers.
+
+**Prerequisites:**
+
+- Docker
+- Docker Compose
+
+**Quick Start with Docker:**
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd resource-management
+
+# Make run script executable (Mac/Linux only)
+chmod +x run.sh
+
+# Execute the setup script
+# On Windows: Use Git Bash to run ./run.sh
+# On Mac/Linux: Use terminal to run ./run.sh
+./run.sh
+```
+
+**Important:** You must use `./run.sh` for Docker setup as it contains additional commands for database initialization, Laravel setup, and migrations that are not available with standard `docker-compose` commands alone.
+
+**What the script does:**
+
+- Builds and starts all containers (Laravel, Next.js, MySQL)
+- Waits for MySQL to be ready
+- Installs Laravel dependencies
+- Generates application key
+- Runs database migrations and seeders
+- Starts development servers
+
+**Access your application:**
+
+- **Laravel Backend**: http://localhost:8000
+- **Next.js Frontend**: http://localhost:3000
+- **MySQL Database**: localhost:3307 (user: root, password: 123456)
+
+#### 💻 **Option 2: Local Development Setup**
+
+For developers who prefer running services directly on their machine.
+
+**Backend Setup (Laravel):**
 
 1. **Navigate to backend directory:**
 
@@ -152,9 +203,9 @@ API and state logic are fully abstracted to reduce coupling and simplify updates
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
    DB_PORT=3306
-   DB_DATABASE=resource_management
-   DB_USERNAME=your_username
-   DB_PASSWORD=your_password
+   DB_DATABASE=your_database_name
+   DB_USERNAME=your_mysql_username
+   DB_PASSWORD=your_mysql_password
    ```
 
 5. **Run migrations:**
@@ -174,7 +225,7 @@ API and state logic are fully abstracted to reduce coupling and simplify updates
    php artisan serve
    ```
 
-### Frontend Setup
+**Frontend Setup (Next.js):**
 
 1. **Navigate to frontend directory:**
 
@@ -205,6 +256,60 @@ API and state logic are fully abstracted to reduce coupling and simplify updates
    npm run dev
    ```
 
+**Access your application:**
+
+- **Laravel Backend**: http://localhost:8000
+- **Next.js Frontend**: http://localhost:3000
+
+### Database Setup
+
+**For Local Development:**
+
+- Create a MySQL database with your preferred name
+- Use your local MySQL username and password
+- Update the credentials in your backend `.env` file
+- Example: If your MySQL user is `john` with password `mypass123` and you created a database called `resource_management`, use those values in your `.env`
+
+**For Docker:**
+
+- Database is automatically created and configured
+- Uses database name `resource` with user `root` and password `123456`
+- No additional setup required
+
+### Environment Variables
+
+**Backend (.env):**
+
+```env
+APP_NAME="Resource Management"
+APP_ENV=local
+APP_KEY=base64:your-key-here
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+# For Local Development (use your own credentials)
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database_name
+DB_USERNAME=your_mysql_username
+DB_PASSWORD=your_mysql_password
+
+# For Docker (pre-configured)
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=resource
+# DB_USERNAME=root
+# DB_PASSWORD=123456
+```
+
+**Frontend (.env.local):**
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+```
+
 ## 🔐 Authentication & Security
 
 ### Bearer Token Authentication
@@ -213,7 +318,7 @@ The application uses **Laravel Sanctum** with **Bearer Token Authentication** fo
 
 - **Token Type**: Bearer tokens (JWT-like tokens)
 - **Token Storage**: Stored in browser localStorage
-- **Token Expiration**: **No expiration** (tokens are valid until manually revoked)
+- **Token Expiration**: **Long-lived tokens** (no expiration by default, valid until manually revoked). Can be easily configured in Laravel Sanctum for quick expiration by setting the `expiration` value in `config/sanctum.php`.
 - **Cross-Domain Support**: Configured for cross-domain API calls without CSRF tokens
 
 #### How It Works
