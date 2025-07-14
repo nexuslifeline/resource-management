@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from "@/components/common/DropdownMenu";
+import ResourceXLogo from "@/components/common/ResourceXLogo";
 
 const menu = [
   {
@@ -87,9 +88,7 @@ export default function Sidebar() {
   return (
     <aside className="fixed flex flex-col w-64 h-screen bg-white border-r shadow-sm">
       <div className="flex items-center h-16 px-6 border-b">
-        <span className="text-lg font-bold tracking-tight">
-          Resource Management
-        </span>
+        <ResourceXLogo />
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
         {menu.map(item => {

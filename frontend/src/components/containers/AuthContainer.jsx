@@ -55,11 +55,11 @@ export default function AuthContainer({
       {/* Footer with About Us and Contact Us links */}
       <footer className="flex flex-col items-center w-full mt-6 mb-2 text-sm text-gray-500">
         <div className="flex flex-wrap justify-center gap-4">
-          <Link href="/about-us" className="hover:underline">
+          <Link href="/about" className="hover:underline">
             About Us
           </Link>
           <span className="hidden sm:inline">|</span>
-          <Link href="/contact-us" className="hover:underline">
+          <Link href="/contact" className="hover:underline">
             Contact Us
           </Link>
         </div>
