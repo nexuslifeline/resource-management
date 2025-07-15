@@ -363,7 +363,13 @@ The API implements comprehensive rate limiting to prevent abuse:
 
 ### Role-Based Access Control
 
-The system implements strict role-based permissions:
+The system implements strict role-based permissions through custom middleware:
+
+#### Custom Middleware Implementation
+
+- **`CheckRole` Middleware**: Validates user roles before allowing access to specific routes. Administrators can access all endpoints, while regular users are restricted to their own resources.
+
+- **`CheckResourceOwnership` Middleware**: Ensures users can only access, modify, or delete resources they own. Administrators bypass this restriction and have full access to all resources.
 
 #### Administrator Role
 
