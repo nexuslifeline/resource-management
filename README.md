@@ -1,6 +1,8 @@
 # Resource Management System
 
-A modern, full-stack resource management application built with Laravel (backend) and Next.js 14 (frontend). This system provides comprehensive resource tracking, user management, and dashboard analytics with role-based access control.
+The frontend uses Next.js 14 for its filesystem-based routing, nested layouts, and hybrid rendering (SSR + SPA). This ensures a fast, SEO-friendly experience with consistent UI and reusable components.
+
+The backend is powered by Laravel, chosen for its intuitive Eloquent ORM, powerful validation, API resource classes, and secure token-based authentication via Sanctum. Laravel’s structure ensures clean business logic, organized controllers, and robust role-based access control.
 
 ## 🧱 Monorepo Structure
 
@@ -18,29 +20,41 @@ Both projects are independently structured but work together as a full-stack sol
 
 ### 🔧 Backend (Laravel)
 
-- **Repository Pattern Implementation**: Business logic is abstracted into dedicated repository classes, keeping controllers thin and focused on HTTP concerns. This separation makes the codebase more maintainable and allows for easier unit testing of business rules without HTTP overhead.
+I chose Laravel for its powerful Eloquent ORM, which makes database operations intuitive with features like eager loading, relationships, and clean query syntax. The built-in migration system ensures smooth, version-controlled schema changes.
 
-- **Laravel Sanctum Bearer Token Authentication**: Provides stateless API authentication that scales well across multiple domains. Unlike session-based auth, bearer tokens eliminate the need for CSRF protection and work seamlessly in cross-origin scenarios, making them ideal for modern SPAs and mobile applications.
+Laravel’s ecosystem is ideal for building APIs. Sanctum offers lightweight, stateless authentication perfect for SPAs, and the repository pattern helps keep business logic clean and testable. Form request validation and resource classes keep code organized and responses consistent.
 
-- **RESTful API Design with Versioning**: Endpoints follow REST conventions using semantic HTTP verbs, making the API intuitive for developers. The `/v1/` prefix enables backward compatibility when introducing breaking changes - existing clients continue working while new features can be deployed under `/v2/` without disruption.
+With features like API versioning, middleware for access control, and built-in security protections, Laravel provides everything needed for a secure, scalable, and maintainable backend.
 
-- **Comprehensive Security Layer**: Rate limiting prevents API abuse by limiting requests per user/IP, while middleware-based authorization ensures proper access control. This multi-layered approach protects against both automated attacks and unauthorized data access.
+**Repository Pattern Implementation**: Business logic abstracted into repository classes, keeping controllers thin and focused on HTTP concerns.
 
-- **Form Request Validation**: Server-side validation is implemented through Laravel's Form Request classes, which centralize validation logic and automatically handle error responses. This approach ensures data integrity regardless of client-side validation bypass attempts and provides consistent error formatting across all endpoints.
+- **Laravel Sanctum Bearer Token Authentication**: Stateless API authentication that scales well across domains, eliminating CSRF protection needs.
 
-- **Resource Class Transformation Layer**: API responses are transformed using Laravel's Resource classes, which segregate data transformation logic from controllers. This approach keeps controllers slim and focused on HTTP concerns while ensuring consistent data formatting and hiding sensitive information from API responses.
+- **RESTful API Design with Versioning**: REST conventions with `/v1/` prefix for backward compatibility and easy API evolution.
+
+- **Comprehensive Security Layer**: Rate limiting and middleware-based authorization protecting against abuse and unauthorized access.
+
+- **Form Request Validation**: Centralized validation logic in dedicated request classes for clean, testable code.
+
+- **Resource Class Transformation Layer**: API response transformation keeping controllers slim while ensuring consistent data formatting.
 
 ### 🖥️ Frontend (Next.js 14 with App Router)
 
-- **Component-Based Architecture**: UI elements are broken down into reusable, self-contained components that can be composed together. This approach reduces code duplication, improves maintainability, and enables consistent design patterns across the application.
+I chose Next.js 14 for the frontend because of its intuitive filesystem-based routing, which simplifies navigation setup—just follow a folder structure and it's ready to go. The new App Router adds powerful support for nested layouts, making it easy to maintain consistent headers, navigation, and styles across pages.
 
-- **Service Layer Abstraction**: API calls are centralized in dedicated service modules that handle data transformation, error handling, and request/response formatting. When backend contracts change, developers only need to update the service layer rather than hunting through multiple components.
+What makes Next.js especially compelling is its hybrid rendering capability. For interactive parts like dashboards, it works like a single-page app with fast client-side navigation. For public-facing or SEO-critical pages like "About Us", it supports SSR and SSG, ensuring both performance and discoverability.
 
-- **Zustand State Management**: Provides lightweight, unopinionated state management that scales from simple component state to complex application-wide data. Unlike Redux, Zustand eliminates boilerplate while maintaining predictable state updates and excellent developer experience.
+Lastly, its component-based architecture promotes clean, reusable code. UI elements are broken down into modular components, reducing duplication and making the project easier to scale and maintain.
 
-- **Two-Layer Validation System**: Frontend validation uses Zod schema validation with react-hook-form integration. Zod provides runtime type safety and schema validation, while react-hook-form handles form state management with minimal re-renders. This combination delivers immediate user feedback and reduces unnecessary API calls by catching validation errors before submission.
+- **Component-Based Architecture**: Reusable, self-contained components reducing duplication and enabling consistent design patterns.
 
-- **Backend Form Request Validation**: Server-side validation is implemented through Laravel's Form Request classes, which centralize validation logic and automatically handle error responses. This approach ensures data integrity regardless of client-side validation bypass attempts and provides consistent error formatting across all endpoints.
+- **Service Layer Abstraction**: Centralized API calls handling data transformation, error handling, and request/response formatting.
+
+- **Zustand State Management**: Lightweight state management scaling from component state to application-wide data without boilerplate.
+
+- **Two-Layer Validation System**: Zod schema validation with react-hook-form integration for immediate feedback and reduced API calls.
+
+- **Hybrid SPA/SSR Approach**: Client-side navigation for dynamic content, SSR/SSG for SEO-optimized public pages.
 
 ## 📁 File Structure
 
@@ -96,8 +110,13 @@ frontend/
 │   │   ├── resources/
 │   │   └── users/
 │   ├── (public)/           # Public routes
+│   │   ├── (site)/         # Site pages route group
+│   │   │   ├── about/      # About page
+│   │   │   ├── contact/    # Contact page
+│   │   │   └── layout.jsx  # Shared site layout
 │   │   ├── login/
-│   │   └── register/
+│   │   ├── register/
+│   │   └── layout.jsx      # Public layout
 │   └── layout.jsx          # Root layout
 ├── components/             # Reusable UI components
 │   ├── common/             # Shared components (Button, Card, Table, etc.)
@@ -109,7 +128,6 @@ frontend/
 │   ├── constants/          # Application constants
 │   └── lib/                # Utility functions
 ├── store/                  # Global state management (Zustand stores)
-└── utils/                  # Utility functions and helpers
 ```
 
 Designed for scalability and maintainability with modular layers.
@@ -465,19 +483,3 @@ The frontend uses a comprehensive component library built with:
 2. Deploy to your hosting platform (Vercel, Netlify, etc.)
 3. Configure environment variables
 4. Set up custom domain (optional)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For support and questions, please open an issue in the GitHub repository.
